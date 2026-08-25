@@ -1,7 +1,7 @@
 Name:           libfido2
 
 Version:        1.14.0
-Release:        7%{?dist}
+Release:        7.1%{?dist}
 Summary:        FIDO2 library
 
 License:        BSD-2-Clause
@@ -15,7 +15,10 @@ Patch01:	01-fix-credman-leak.patch
 BuildRequires:  gnupg2
 BuildRequires:  cmake
 BuildRequires:  make
-BuildRequires:  gcc
+# XCP-ng BEGIN gcc is too old for libfido2, we use devtoolset-11 instead
+#BuildRequires:  gcc
+BuildRequires:  devtoolset-11-gcc
+# XCP-ng END
 BuildRequires:  pkgconfig(libcbor)
 BuildRequires:  pkgconfig(libudev)
 BuildRequires:  pkgconfig(openssl)
@@ -54,16 +57,24 @@ authentication device.
 
 
 %prep
-%{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
+# XCP-ng BEGIN we don't have %%{gpgverify} macros and our gnupg2 is too old to verify the signature
+#%%{gpgverify} --keyring='%%{SOURCE2}' --signature='%%{SOURCE1}' --data='%%{SOURCE0}'
+# XCP-ng END
 %autosetup -p1 -n %{name}-%{version}
 
 
 %build
+# XCP-ng BEGIN gcc is too old, we use devtoolset-11 instead
+. /opt/rh/devtoolset-11/enable
+# XCP-ng END
 %cmake
 %cmake_build
 
 
 %install
+# XCP-ng BEGIN gcc is too old, we use devtoolset-11 instead
+. /opt/rh/devtoolset-11/enable
+# XCP-ng END
 %cmake_install
 # Remove static files per packaging guidelines
 find %{buildroot} -type f -name "*.a" -delete -print
@@ -76,29 +87,48 @@ find %{buildroot} -type f -name "*.a" -delete -print
 %files
 %doc NEWS README.adoc
 %license LICENSE
-%{_libdir}/libfido2.so.1{,.*}
+# XCP-ng BEGIN our RPM version does not support braces in globs
+#%%{_libdir}/libfido2.so.1{,.*}
+%{_libdir}/libfido2.so.1*
+# XCP-ng END
 
 %files devel
 %{_libdir}/pkgconfig/libfido2.pc
 %{_libdir}/libfido2.so
 %{_includedir}/fido.h
 %{_includedir}/fido
-%{_mandir}/man3/fido_*.3{,.*}
-%{_mandir}/man3/eddsa_pk_*.3{,.*}
-%{_mandir}/man3/es256_pk_*.3{,.*}
-%{_mandir}/man3/es384_pk_*.3{,.*}
-%{_mandir}/man3/rs256_pk_*.3{,.*}
+# XCP-ng BEGIN our RPM version does not support braces in globs
+#%%{_mandir}/man3/fido_*.3{,.*}
+#%%{_mandir}/man3/eddsa_pk_*.3{,.*}
+#%%{_mandir}/man3/es256_pk_*.3{,.*}
+#%%{_mandir}/man3/es384_pk_*.3{,.*}
+#%%{_mandir}/man3/rs256_pk_*.3{,.*}
+%{_mandir}/man3/fido_*.3*
+%{_mandir}/man3/eddsa_pk_*.3*
+%{_mandir}/man3/es256_pk_*.3*
+%{_mandir}/man3/es384_pk_*.3*
+%{_mandir}/man3/rs256_pk_*.3*
+# XCP-ng END
 
 %files -n fido2-tools
 %{_bindir}/fido2-assert
 %{_bindir}/fido2-cred
 %{_bindir}/fido2-token
-%{_mandir}/man1/fido2-assert.1{,.*}
-%{_mandir}/man1/fido2-cred.1{,.*}
-%{_mandir}/man1/fido2-token.1{,.*}
-
+# XCP-ng BEGIN our RPM version does not support braces in globs
+#%%{_mandir}/man1/fido2-assert.1{,.*}
+#%%{_mandir}/man1/fido2-cred.1{,.*}
+#%%{_mandir}/man1/fido2-token.1{,.*}
+%{_mandir}/man1/fido2-assert.1*
+%{_mandir}/man1/fido2-cred.1*
+%{_mandir}/man1/fido2-token.1*
+# XCP-ng END
 
 %changelog
+* Fri Sep 25 2026 Lucas Ravagnier <lucas.ravagnier@vates.tech> - 1.14.0-7.1
+- First import
+- Use devtoolset-11-gcc instead of gcc because our gcc is too old.
+- Modification of glob's because our version of RPM does not support braces.
+
 * Tue Oct 29 2024 Troy Dawson <tdawson@redhat.com> - 1.14.0-7
 - Bump release for October 2024 mass rebuild:
   Resolves: RHEL-64018
